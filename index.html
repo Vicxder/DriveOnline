@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Auto RC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .button {
+            padding: 20px 40px;
+            margin: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+        }
+        .button:active {
+            background-color: #0056b3;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+        #video-container {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Control de Auto RC</h1>
+    
+    <!-- Botones -->
+    <div>
+        <button class="button" id="forward" onclick="sendCommand('forward')">Adelante</button>
+    </div>
+    <div>
+        <button class="button" id="left" onclick="sendCommand('left')">Izquierda</button>
+        <button class="button" id="stop" onclick="sendCommand('stop')">Detener</button>
+        <button class="button" id="right" onclick="sendCommand('right')">Derecha</button>
+    </div>
+    <div>
+        <button class="button" id="backward" onclick="sendCommand('backward')">Atrás</button>
+    </div>
+    
+    <!-- Visualización del comando seleccionado -->
+    <div id="status">Comando actual: Ninguno</div>
+
+    <!-- Contenedor para el video en vivo -->
+    <div id="video-container">
+        <img src="http://10.130.136.130:5000/video_feed" alt="Transmisión de Video" />
+    </div>
+
+    <script>
+        let currentCommand = null;  // Guardar el comando actual
+
+        // Función para enviar comandos desde los botones
+        function sendCommand(command) {
+            if (currentCommand === command) return;  // No enviar si el comando es el mismo que el anterior
+            updateStatus(command);  // Actualizar el estado en pantalla
+            currentCommand = command;  // Actualizar el comando actual
+
+            fetch('http://10.130.136.130:5000/control', {  // Cambiado a 'localhost' para usar el servidor en la misma PC
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: command })
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log(`Comando enviado: ${command}`);
+                } else {
+                    console.error('Error enviando comando');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Actualizar el comando en la pantalla
+        function updateStatus(command) {
+            statusDisplay.textContent = `Comando actual: ${capitalizeFirstLetter(command)}`;
+        }
+
+        // Función para capitalizar la primera letra del comando
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        // Asegurarse de que el botón de detener no envíe comandos repetidos
+        const statusDisplay = document.getElementById('status');
+    </script>
+</body>
+</html>
