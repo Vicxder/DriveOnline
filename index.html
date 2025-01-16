@@ -54,19 +54,22 @@
 
     <!-- Contenedor para el video en vivo -->
     <div id="video-container">
-        <img src="http://10.130.136.130:5000/video_feed" alt="Transmisión de Video" />
+        <img id="video-feed" src="" alt="Transmisión de Video" />
     </div>
 
     <script>
-        let currentCommand = null;  // Guardar el comando actual
+        const SERVER_URL = "https://tu-servidor-en-render.com"; // Reemplázalo con la URL real de tu servidor Render
+        const statusDisplay = document.getElementById('status');
+        const videoFeed = document.getElementById('video-feed');
+
+        // Configura la URL del video
+        videoFeed.src = `${SERVER_URL}/video_feed`;
 
         // Función para enviar comandos desde los botones
         function sendCommand(command) {
-            if (currentCommand === command) return;  // No enviar si el comando es el mismo que el anterior
-            updateStatus(command);  // Actualizar el estado en pantalla
-            currentCommand = command;  // Actualizar el comando actual
+            updateStatus(command); // Actualizar el estado en pantalla
 
-            fetch('http://10.130.136.130:5000/control', {  // Cambiado a 'localhost' para usar el servidor en la misma PC
+            fetch(`${SERVER_URL}/control`, { // Usar URL dinámica
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -94,9 +97,6 @@
         function capitalizeFirstLetter(string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
-
-        // Asegurarse de que el botón de detener no envíe comandos repetidos
-        const statusDisplay = document.getElementById('status');
     </script>
 </body>
 </html>
