@@ -58,18 +58,55 @@
     </div>
 
     <script>
-        const SERVER_URL = "https://flaskserver-1.onrender.com/"; // Reemplázalo con la URL real de tu servidor Render
+        const SERVER_URL = "https://flaskserver-1.onrender.com"; // URL del servidor Flask
+        const WS_URL = "wss://flaskserver-1.onrender.com/socket.io"; // URL del WebSocket
         const statusDisplay = document.getElementById('status');
         const videoFeed = document.getElementById('video-feed');
+        let socket;
 
         // Configura la URL del video
         videoFeed.src = `${SERVER_URL}/video_feed`;
 
-        // Función para enviar comandos desde los botones
-        function sendCommand(command) {
-            updateStatus(command); // Actualizar el estado en pantalla
+        // Inicializar WebSocket
+        function initializeWebSocket() {
+            socket = new WebSocket(WS_URL);
 
-            fetch(`${SERVER_URL}/control`, { // Usar URL dinámica
+            socket.onopen = () => {
+                console.log("Conexión WebSocket establecida");
+                updateStatus("Conectado al servidor");
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log("Mensaje recibido:", data);
+                updateStatus(`Respuesta del servidor: ${data.message}`);
+            };
+
+            socket.onclose = () => {
+                console.error("Conexión WebSocket cerrada");
+                updateStatus("Conexión cerrada, reconectando...");
+                setTimeout(initializeWebSocket, 3000); // Reintenta conexión
+            };
+
+            socket.onerror = (error) => {
+                console.error("Error en WebSocket:", error);
+            };
+        }
+
+        // Enviar comandos al servidor
+        function sendCommand(command) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ command: command }));
+                updateStatus(`Comando enviado: ${command}`);
+            } else {
+                console.error("WebSocket no conectado. Usando HTTP.");
+                sendCommandViaHTTP(command); // Fallback a HTTP si WebSocket no está disponible
+            }
+        }
+
+        // Enviar comandos vía HTTP
+        function sendCommandViaHTTP(command) {
+            fetch(`${SERVER_URL}/control`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -78,9 +115,9 @@
             })
             .then(response => {
                 if (response.ok) {
-                    console.log(`Comando enviado: ${command}`);
+                    console.log(`Comando enviado vía HTTP: ${command}`);
                 } else {
-                    console.error('Error enviando comando');
+                    console.error('Error enviando comando vía HTTP');
                 }
             })
             .catch(error => {
@@ -89,14 +126,12 @@
         }
 
         // Actualizar el comando en la pantalla
-        function updateStatus(command) {
-            statusDisplay.textContent = `Comando actual: ${capitalizeFirstLetter(command)}`;
+        function updateStatus(message) {
+            statusDisplay.textContent = message;
         }
 
-        // Función para capitalizar la primera letra del comando
-        function capitalizeFirstLetter(string) {
-            return string.charAt(0).toUpperCase() + string.slice(1);
-        }
+        // Iniciar la conexión WebSocket
+        initializeWebSocket();
     </script>
 </body>
 </html>
