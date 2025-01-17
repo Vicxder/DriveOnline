@@ -77,19 +77,25 @@
             };
 
             socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                console.log("Mensaje recibido:", data);
-                updateStatus(`Respuesta del servidor: ${data.message}`);
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log("Mensaje recibido:", data);
+                    updateStatus(`Respuesta del servidor: ${data.message}`);
+                } catch (error) {
+                    console.error("Error al procesar el mensaje:", error);
+                    updateStatus("Error al procesar el mensaje del servidor");
+                }
             };
 
             socket.onclose = () => {
                 console.error("Conexión WebSocket cerrada");
                 updateStatus("Conexión cerrada, reconectando...");
-                setTimeout(initializeWebSocket, 3000); // Reintenta conexión
+                setTimeout(initializeWebSocket, 3000); // Reintenta la reconexión después de 3 segundos
             };
 
             socket.onerror = (error) => {
                 console.error("Error en WebSocket:", error);
+                updateStatus("Error en la conexión WebSocket");
             };
         }
 
@@ -118,10 +124,12 @@
                     console.log(`Comando enviado vía HTTP: ${command}`);
                 } else {
                     console.error('Error enviando comando vía HTTP');
+                    updateStatus("Error al enviar el comando vía HTTP");
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                updateStatus("Error en la conexión HTTP");
             });
         }
 
